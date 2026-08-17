@@ -13,6 +13,8 @@ import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   signInWithPopup,
+  createUserWithEmailAndPassword,
+  updateProfile,
   signOut as firebaseSignOut,
   type User,
 } from 'firebase/auth';
@@ -34,6 +36,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   signIn: (email: string, password: string) => Promise<UserRole>;
+  signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<UserRole>;
   signInWithGoogle: () => Promise<UserRole>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
@@ -159,6 +162,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [createSession]);
 
+  const signUp = useCallback(async (email: string, password: string, fullName: string, phone?: string): Promise<UserRole> => {
+    setError(null);
+    setLoading(true);
+    try {
+      assertFirebaseClientConfigured();
+      const credential = await createUserWithEmailAndPassword(auth, email, password);
+      // Set display name in Firebase Auth
+      await updateProfile(credential.user, { displayName: fullName });
+      // Register user in Firestore + set volunteer claim via server
+      const idToken = await credential.user.getIdToken();
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken, fullName, phone: phone || '' }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        await firebaseSignOut(auth);
+        throw new Error(data.error || 'Failed to complete registration. Please try again.');
+      }
+      // Force token refresh so custom claim is available
+      await credential.user.getIdToken(true);
+      return await createSession(credential.user);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Sign-up failed';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [createSession]);
+
   const signInWithGoogle = useCallback(async () => {
     setError(null);
     setLoading(true);
@@ -212,6 +247,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         error,
         signIn,
+        signUp,
         signInWithGoogle,
         signOut,
         isAdmin,

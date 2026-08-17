@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -157,6 +158,18 @@ export default function LoginPage() {
               `Sign In to ${portal === 'admin' ? 'Admin' : 'User'} Portal`
             )}
           </Button>
+
+          {portal === 'user' && (
+            <p className="text-xs text-muted-foreground text-center">
+              Don&apos;t have an account?{' '}
+              <Link
+                href="/signup"
+                className="text-gold hover:text-gold-dark font-semibold underline-offset-4 hover:underline transition-colors"
+              >
+                Sign Up
+              </Link>
+            </p>
+          )}
         </CardFooter>
       </form>
     </Card>
