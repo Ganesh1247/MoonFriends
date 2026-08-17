@@ -17,7 +17,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase/client';
+import { auth, db, assertFirebaseClientConfigured } from '@/lib/firebase/client';
 import type { UserRole } from '@/types';
 
 interface AuthUser {
@@ -55,6 +55,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Fetch user profile from Firestore
   const fetchUserProfile = useCallback(async (fbUser: User): Promise<AuthUser | null> => {
     try {
+      if (!db) {
+        return {
+          uid: fbUser.uid,
+          email: fbUser.email || '',
+          displayName: fbUser.displayName || '',
+          role: 'volunteer',
+          photoURL: fbUser.photoURL || '',
+        };
+      }
+
       const userDoc = await getDoc(doc(db, 'users', fbUser.uid));
       if (userDoc.exists()) {
         const data = userDoc.data();
@@ -98,6 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchUserProfile]);
 
   const createSession = useCallback(async (fbUser: User): Promise<UserRole> => {
+    assertFirebaseClientConfigured();
+
     const idToken = await fbUser.getIdToken();
     const tokenResult = await fbUser.getIdTokenResult();
     const role = (tokenResult.claims.role as UserRole) || 'volunteer';
@@ -121,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     setLoading(true);
     try {
+      assertFirebaseClientConfigured();
       const credential = await signInWithEmailAndPassword(auth, email, password);
       return await createSession(credential.user);
     } catch (err) {
@@ -133,13 +146,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           : '';
       const message =
         code === 'auth/configuration-not-found' ||
-        (err instanceof Error && err.message.includes('CONFIGURATION_NOT_FOUND'))
-          ? 'Sign-in is not configured yet. An administrator must enable Email/Password sign-in in Firebase Authentication for the Moon Friends project.'
+        (err instanceof Error && err.message.includes('CONFIGURATION_NOT_FOUND')) ||
+        (err instanceof Error && err.message.includes('Firebase client configuration is missing'))
+          ? 'Sign-in is not configured yet. Add the Firebase NEXT_PUBLIC_FIREBASE_* values in .env.local or contact the project admin.'
           : err instanceof Error
             ? err.message
             : 'An error occurred during sign in';
       setError(message);
-      throw err;
+      throw new Error(message);
     } finally {
       setLoading(false);
     }
@@ -149,14 +163,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     setLoading(true);
     try {
+      assertFirebaseClientConfigured();
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       const credential = await signInWithPopup(auth, provider);
       return await createSession(credential.user);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Google sign-in failed';
+      const message =
+        err instanceof Error && err.message.includes('Firebase client configuration is missing')
+          ? 'Google sign-in is not configured yet. Add the Firebase NEXT_PUBLIC_FIREBASE_* values in .env.local or contact the project admin.'
+          : err instanceof Error
+            ? err.message
+            : 'Google sign-in failed';
       setError(message);
-      throw err;
+      throw new Error(message);
     } finally {
       setLoading(false);
     }
