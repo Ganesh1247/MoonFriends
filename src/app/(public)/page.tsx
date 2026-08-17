@@ -86,7 +86,7 @@ export default function HomePage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight"
           >
-            <span className="text-gradient-gold">🙏 {APP_NAME}</span>
+            <span className="text-gradient-gold">🌙 {APP_NAME}</span>
           </motion.h1>
 
           {/* Event name */}
@@ -96,7 +96,7 @@ export default function HomePage() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-xl sm:text-2xl md:text-3xl font-semibold text-saffron mt-4"
           >
-            🪔 {EVENT_NAME}
+            {EVENT_NAME}
           </motion.h2>
 
           {/* Tagline */}

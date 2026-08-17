@@ -11,7 +11,7 @@ export function MobileFAB() {
   const { isAdmin, isTreasurer } = useAuth();
 
   return (
-    <div className="md:hidden fixed bottom-18 right-4 z-40 flex flex-col items-end">
+    <div className="md:hidden fixed bottom-20 right-4 z-40 flex flex-col items-end">
       <AnimatePresence>
         {open && (
           <motion.div
@@ -49,10 +49,10 @@ export function MobileFAB() {
       <button
         onClick={() => setOpen(!open)}
         aria-label="Quick financial action"
-        className="flex items-center justify-center w-13 h-13 rounded-full bg-gold text-night-deep font-bold shadow-2xl glow-gold active:scale-90 transition-transform"
+        className="flex items-center justify-center w-12 h-12 rounded-full bg-gold text-night-deep font-bold shadow-2xl glow-gold active:scale-90 transition-transform"
       >
         <motion.div animate={{ rotate: open ? 45 : 0 }} transition={{ duration: 0.2 }}>
-          {open ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
+          {open ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
         </motion.div>
       </button>
     </div>

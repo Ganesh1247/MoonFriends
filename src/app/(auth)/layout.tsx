@@ -1,4 +1,4 @@
-import { Moon } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export default function AuthLayout({
@@ -15,15 +15,21 @@ export default function AuthLayout({
       {/* Brand Header */}
       <div className="mb-6 text-center z-10">
         <Link href="/" className="inline-flex items-center gap-2 group mb-2">
-          <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gold/10 group-hover:bg-gold/20 transition-all glow-gold">
-            <Moon className="w-6 h-6 text-gold" />
+          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gold/40 shadow-xl glow-gold">
+            <Image
+              src="/ganesh-logo.jpg"
+              alt="Lord Ganesha"
+              width={48}
+              height={48}
+              className="w-full h-full object-cover"
+            />
           </div>
         </Link>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gradient-gold">
           🌙 MOON FRIENDS
         </h1>
         <p className="text-xs sm:text-sm text-saffron font-medium mt-1">
-          🪔 Vinayaka Chavithi 2026
+          Vinayaka Chavithi 2026
         </p>
       </div>
 

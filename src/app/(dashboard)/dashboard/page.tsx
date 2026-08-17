@@ -196,7 +196,7 @@ export default function DashboardPage() {
               🌙 <span className="text-gradient-gold">MOON FRIENDS</span>
             </h1>
             <p className="text-sm sm:text-base font-semibold text-saffron mt-1">
-              🪔 VINAYAKA CHAVITHI 2026
+              VINAYAKA CHAVITHI 2026
             </p>
             <p className="text-xs sm:text-sm text-muted-foreground mt-2 italic">
               &ldquo;Together in devotion. Together as a community.&rdquo;

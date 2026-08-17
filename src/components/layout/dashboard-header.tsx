@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/auth-context';
-import { Moon, Plus, Globe } from 'lucide-react';
+import { Plus, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -14,8 +15,14 @@ export function DashboardHeader() {
       {/* Left: Mobile Brand / Page Title */}
       <div className="flex items-center gap-3 md:hidden">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gold/10">
-            <Moon className="w-4 h-4 text-gold" />
+          <div className="w-8 h-8 rounded-full overflow-hidden border border-gold/40 shadow-sm">
+            <Image
+              src="/ganesh-logo.jpg"
+              alt="Ganesh"
+              width={32}
+              height={32}
+              className="w-full h-full object-cover"
+            />
           </div>
           <span className="font-bold text-xs text-gradient-gold">MOON FRIENDS</span>
         </Link>
@@ -24,7 +31,7 @@ export function DashboardHeader() {
       <div className="hidden md:flex items-center gap-2">
         <span className="text-xs text-muted-foreground">Community Hub:</span>
         <Badge variant="outline" className="border-gold/30 text-gold text-xs">
-          🪔 Vinayaka Chavithi 2026
+          Vinayaka Chavithi 2026
         </Badge>
       </div>
 
