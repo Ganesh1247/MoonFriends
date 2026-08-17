@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Public readable announcements, events, and categories
+    match /announcements/{id} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /events/{id} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /expense_categories/{id} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    match /_financial_summary/{id} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only Admin SDK can modify
+    }
+
+    match /collections/{id} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only Admin SDK can modify
+    }
+
+    match /expenses/{id} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only Admin SDK can modify
+    }
+
+    match /contributors/{id} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only Admin SDK can modify
+    }
+
+    match /audit_logs/{id} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only Admin SDK can modify
+    }
+
+    match /volunteers/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    match /inventory/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    match /daily_closings/{id} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only Admin SDK can modify
+    }
+
+    match /users/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == id;
+    }
+
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+  }
+}

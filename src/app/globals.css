@@ -1,26 +1,393 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
+
+/* ─── Moon Friends Design System ─────────────────────────────────── */
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-outfit);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-outfit);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Moon Friends Brand Colors */
+  --color-gold: #D4A843;
+  --color-gold-light: #E8C76B;
+  --color-gold-dark: #B08A2E;
+  --color-saffron: #FF6B2B;
+  --color-saffron-light: #FF8A55;
+  --color-saffron-dark: #E05510;
+  --color-maroon: #7B2D3A;
+  --color-maroon-light: #9E3D4D;
+  --color-maroon-dark: #5C1F2B;
+  --color-moonlight: #F5F0E8;
+  --color-moon-glow: #FFF8E7;
+  --color-night-sky: #0F1729;
+  --color-night-deep: #0A0F1E;
+  --color-night-surface: #151D33;
+  --color-night-card: #1A2340;
+  --color-money-in: #22C55E;
+  --color-money-out: #EF4444;
+  --color-money-in-bg: rgba(34, 197, 94, 0.12);
+  --color-money-out-bg: rgba(239, 68, 68, 0.12);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ─── Moon Friends Dark Theme (Primary Theme) ───────────────────── */
+
+:root {
+  --background: #0A0F1E;
+  --foreground: #F5F0E8;
+  --card: #1A2340;
+  --card-foreground: #F5F0E8;
+  --popover: #1A2340;
+  --popover-foreground: #F5F0E8;
+  --primary: #D4A843;
+  --primary-foreground: #0A0F1E;
+  --secondary: #151D33;
+  --secondary-foreground: #F5F0E8;
+  --muted: #151D33;
+  --muted-foreground: #8B8FA3;
+  --accent: #1E2A4A;
+  --accent-foreground: #F5F0E8;
+  --destructive: #EF4444;
+  --border: rgba(212, 168, 67, 0.15);
+  --input: rgba(212, 168, 67, 0.12);
+  --ring: #D4A843;
+  --chart-1: #D4A843;
+  --chart-2: #FF6B2B;
+  --chart-3: #22C55E;
+  --chart-4: #8B5CF6;
+  --chart-5: #3B82F6;
+  --radius: 0.75rem;
+  --sidebar: #0F1729;
+  --sidebar-foreground: #F5F0E8;
+  --sidebar-primary: #D4A843;
+  --sidebar-primary-foreground: #0A0F1E;
+  --sidebar-accent: #1A2340;
+  --sidebar-accent-foreground: #F5F0E8;
+  --sidebar-border: rgba(212, 168, 67, 0.1);
+  --sidebar-ring: #D4A843;
+}
+
+/* ─── Light Theme Variant ────────────────────────────────────────── */
+
+.light {
+  --background: #FBF8F3;
+  --foreground: #1A1A2E;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A2E;
+  --popover: #FFFFFF;
+  --popover-foreground: #1A1A2E;
+  --primary: #D4A843;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F5F0E8;
+  --secondary-foreground: #1A1A2E;
+  --muted: #F5F0E8;
+  --muted-foreground: #6B7280;
+  --accent: #FFF8E7;
+  --accent-foreground: #1A1A2E;
+  --destructive: #EF4444;
+  --border: rgba(0, 0, 0, 0.08);
+  --input: rgba(0, 0, 0, 0.06);
+  --ring: #D4A843;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #1A1A2E;
+  --sidebar-primary: #D4A843;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F5F0E8;
+  --sidebar-accent-foreground: #1A1A2E;
+  --sidebar-border: rgba(0, 0, 0, 0.06);
+  --sidebar-ring: #D4A843;
+}
+
+/* ─── Base Styles ────────────────────────────────────────────────── */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  html {
+    @apply font-sans scroll-smooth;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(212, 168, 67, 0.2);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(212, 168, 67, 0.4);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ─── Moon Friends Utilities ─────────────────────────────────────── */
+
+@layer utilities {
+  /* Glassmorphism */
+  .glass {
+    background: rgba(26, 35, 64, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(212, 168, 67, 0.1);
+  }
+
+  .glass-light {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  /* Moon Glow Effect */
+  .glow-gold {
+    box-shadow: 0 0 20px rgba(212, 168, 67, 0.15),
+                0 0 40px rgba(212, 168, 67, 0.05);
+  }
+
+  .glow-saffron {
+    box-shadow: 0 0 20px rgba(255, 107, 43, 0.15),
+                0 0 40px rgba(255, 107, 43, 0.05);
+  }
+
+  .glow-money-in {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
+  }
+
+  .glow-money-out {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
+  }
+
+  /* Gradient Text */
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #D4A843, #E8C76B, #D4A843);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-saffron {
+    background: linear-gradient(135deg, #FF6B2B, #FF8A55, #FF6B2B);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-festival {
+    background: linear-gradient(135deg, #D4A843, #FF6B2B, #7B2D3A);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Gradient Backgrounds */
+  .bg-gradient-gold {
+    background: linear-gradient(135deg, #D4A843, #E8C76B);
+  }
+
+  .bg-gradient-saffron {
+    background: linear-gradient(135deg, #FF6B2B, #FF8A55);
+  }
+
+  .bg-gradient-night {
+    background: linear-gradient(180deg, #0F1729, #0A0F1E);
+  }
+
+  .bg-gradient-hero {
+    background: linear-gradient(
+      135deg,
+      #0A0F1E 0%,
+      #0F1729 30%,
+      #1A2340 60%,
+      #0F1729 100%
+    );
+  }
+
+  /* Festival card pattern overlay */
+  .pattern-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(
+      circle at 20% 50%,
+      rgba(212, 168, 67, 0.03) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(255, 107, 43, 0.02) 0%,
+      transparent 50%
+    );
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Subtle shimmer animation */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(212, 168, 67, 0.08) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+
+  /* Text balance for headings */
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* ─── Animations ─────────────────────────────────────────────────── */
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .shimmer {
+    animation: none !important;
+  }
+}
+
+/* ─── Focus Styles ───────────────────────────────────────────────── */
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid #D4A843;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Improve focus for inputs */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: none;
+    ring: 2px;
+    ring-color: #D4A843;
+  }
+}
+
+/* ─── Mobile Optimizations ───────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  /* Larger tap targets */
+  button, a, [role="button"] {
+    min-height: 44px;
+  }
+
+  /* Prevent zoom on input focus (iOS) */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ─── Print Styles ───────────────────────────────────────────────── */
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .glass, .glass-light {
+    background: white !important;
+    backdrop-filter: none !important;
+    border: 1px solid #ccc !important;
+  }
 }
