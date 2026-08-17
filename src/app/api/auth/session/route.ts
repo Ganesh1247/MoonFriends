@@ -28,9 +28,10 @@ export async function POST(request: Request) {
       uid: decodedToken.uid,
     });
   } catch (error) {
-    console.error('Session creation error:', error);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Session creation error:', message);
     return NextResponse.json(
-      { error: 'Failed to create session' },
+      { error: 'Failed to create session', detail: message },
       { status: 401 }
     );
   }
