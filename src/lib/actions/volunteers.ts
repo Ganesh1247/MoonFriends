@@ -5,6 +5,7 @@ import { requireAuth, requireRole } from '@/lib/firebase/auth-session';
 import { volunteerSchema } from '@/lib/validations/volunteer';
 import { COLLECTIONS } from '@/lib/constants';
 import { Timestamp } from 'firebase-admin/firestore';
+import { serializeDoc } from '@/lib/utils';
 import type { Volunteer, ActionResult } from '@/types';
 
 export async function getVolunteers(): Promise<ActionResult<Volunteer[]>> {
@@ -17,10 +18,12 @@ export async function getVolunteers(): Promise<ActionResult<Volunteer[]>> {
 
     const volunteers: Volunteer[] = [];
     snapshot.forEach((doc) => {
-      volunteers.push({
-        ...(doc.data() as Volunteer),
-        id: doc.id,
-      });
+      volunteers.push(
+        serializeDoc({
+          ...doc.data(),
+          id: doc.id,
+        })
+      );
     });
 
     return { success: true, data: volunteers };

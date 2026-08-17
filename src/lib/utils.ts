@@ -143,3 +143,33 @@ export function getPaymentModeLabel(mode: string): string {
   };
   return labels[mode] || mode;
 }
+
+/**
+ * Deeply serialize any Firestore documents or objects, converting Timestamps & Dates to ISO strings.
+ * Ensures 100% clean Next.js Server Action boundary serialization.
+ */
+export function serializeDoc<T = any>(data: any): T {
+  if (data === null || data === undefined) return data;
+  if (typeof data !== 'object') return data;
+
+  if (typeof data.toDate === 'function') {
+    return data.toDate().toISOString() as any;
+  }
+  if (data instanceof Date) {
+    return data.toISOString() as any;
+  }
+  if (data._seconds !== undefined && data._nanoseconds !== undefined) {
+    return new Date(data._seconds * 1000).toISOString() as any;
+  }
+
+  if (Array.isArray(data)) {
+    return data.map((item) => serializeDoc(item)) as any;
+  }
+
+  const result: Record<string, any> = {};
+  for (const [key, value] of Object.entries(data)) {
+    result[key] = serializeDoc(value);
+  }
+  return result as T;
+}
+

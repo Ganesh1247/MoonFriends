@@ -4,6 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { requireAuth, requireRole } from '@/lib/firebase/auth-session';
 import { COLLECTIONS, DEFAULT_EXPENSE_CATEGORIES } from '@/lib/constants';
 import { Timestamp } from 'firebase-admin/firestore';
+import { serializeDoc } from '@/lib/utils';
 import type { FinancialSummary, DailyClosing, ActionResult } from '@/types';
 
 /**
@@ -60,7 +61,7 @@ export async function getFinancialSummary(): Promise<ActionResult<FinancialSumma
 
     return {
       success: true,
-      data: summary,
+      data: serializeDoc(summary),
     };
   } catch (error) {
     console.error('Error fetching financial summary:', error);
@@ -85,10 +86,12 @@ export async function getDailyClosings(): Promise<ActionResult<DailyClosing[]>> 
 
     const closings: DailyClosing[] = [];
     snapshot.forEach((doc) => {
-      closings.push({
-        ...(doc.data() as DailyClosing),
-        id: doc.id,
-      });
+      closings.push(
+        serializeDoc({
+          ...doc.data(),
+          id: doc.id,
+        })
+      );
     });
 
     return { success: true, data: closings };

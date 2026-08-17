@@ -4,6 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { requireRole } from '@/lib/firebase/auth-session';
 import { COLLECTIONS } from '@/lib/constants';
 import { Timestamp } from 'firebase-admin/firestore';
+import { serializeDoc } from '@/lib/utils';
 import type { Announcement, ActionResult } from '@/types';
 
 export async function getAnnouncements(): Promise<ActionResult<Announcement[]>> {
@@ -15,10 +16,12 @@ export async function getAnnouncements(): Promise<ActionResult<Announcement[]>> 
 
     const announcements: Announcement[] = [];
     snapshot.forEach((doc) => {
-      announcements.push({
-        ...(doc.data() as Announcement),
-        id: doc.id,
-      });
+      announcements.push(
+        serializeDoc({
+          ...doc.data(),
+          id: doc.id,
+        })
+      );
     });
 
     return { success: true, data: announcements };

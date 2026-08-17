@@ -3,7 +3,7 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { requireRole } from '@/lib/firebase/auth-session';
 import { expenseSchema, expenseEditSchema } from '@/lib/validations/expense';
-import { rupeesToPaise, generateTransactionId, formatCurrency } from '@/lib/utils';
+import { rupeesToPaise, generateTransactionId, formatCurrency, serializeDoc } from '@/lib/utils';
 import { COLLECTIONS } from '@/lib/constants';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import type { ActionResult } from '@/types';
@@ -427,13 +427,12 @@ export async function getExpenses(): Promise<ActionResult<any[]>> {
 
     const list: any[] = [];
     snapshot.forEach((doc) => {
-      const data = doc.data();
-      list.push({
-        ...data,
-        id: doc.id,
-        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
-        updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
-      });
+      list.push(
+        serializeDoc({
+          ...doc.data(),
+          id: doc.id,
+        })
+      );
     });
 
     return { success: true, data: list };
@@ -457,15 +456,12 @@ export async function getExpenseById(id: string): Promise<ActionResult<any>> {
       return { success: false, error: 'Expense not found' };
     }
 
-    const data = docSnap.data()!;
     return {
       success: true,
-      data: {
-        ...data,
+      data: serializeDoc({
+        ...docSnap.data(),
         id: docSnap.id,
-        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
-        updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
-      },
+      }),
     };
   } catch (error) {
     console.error('Error fetching expense by id:', error);

@@ -3,7 +3,7 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { requireAuth, requireRole } from '@/lib/firebase/auth-session';
 import { COLLECTIONS } from '@/lib/constants';
-import { rupeesToPaise } from '@/lib/utils';
+import { rupeesToPaise, serializeDoc } from '@/lib/utils';
 import { Timestamp } from 'firebase-admin/firestore';
 import type { InventoryItem, ActionResult } from '@/types';
 
@@ -17,10 +17,12 @@ export async function getInventory(): Promise<ActionResult<InventoryItem[]>> {
 
     const items: InventoryItem[] = [];
     snapshot.forEach((doc) => {
-      items.push({
-        ...(doc.data() as InventoryItem),
-        id: doc.id,
-      });
+      items.push(
+        serializeDoc({
+          ...doc.data(),
+          id: doc.id,
+        })
+      );
     });
 
     return { success: true, data: items };
@@ -37,7 +39,7 @@ export async function createInventoryItem(
   formData: Record<string, any>
 ): Promise<ActionResult<{ id: string }>> {
   try {
-    await requireRole(['admin', 'treasurer']);
+    await requireRole(['admin']);
 
     if (!formData.itemName || !formData.unit) {
       return { success: false, error: 'Item name and unit are required' };
@@ -80,7 +82,7 @@ export async function updateInventoryItem(
   formData: Record<string, any>
 ): Promise<ActionResult> {
   try {
-    await requireRole(['admin', 'treasurer']);
+    await requireRole(['admin']);
 
     const purchasedQty = Number(formData.purchasedQty) || 0;
     const usedQty = Number(formData.usedQty) || 0;

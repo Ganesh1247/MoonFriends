@@ -3,6 +3,7 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { requireAuth } from '@/lib/firebase/auth-session';
 import { COLLECTIONS } from '@/lib/constants';
+import { serializeDoc } from '@/lib/utils';
 import type { Contributor, ActionResult } from '@/types';
 
 /**
@@ -22,11 +23,12 @@ export async function getContributors(
     let contributors: Contributor[] = [];
 
     snapshot.forEach((doc) => {
-      const data = doc.data() as Contributor;
-      contributors.push({
-        ...data,
-        id: doc.id,
-      });
+      contributors.push(
+        serializeDoc({
+          ...doc.data(),
+          id: doc.id,
+        })
+      );
     });
 
     if (searchQuery && searchQuery.trim()) {
@@ -63,7 +65,7 @@ export async function getContributorById(
       return { success: false, error: 'Contributor not found' };
     }
 
-    const contributor = { ...doc.data(), id: doc.id } as Contributor;
+    const contributor = serializeDoc({ ...doc.data(), id: doc.id }) as Contributor;
 
     const txSnapshot = await adminDb
       .collection(COLLECTIONS.COLLECTION_TRANSACTIONS)
@@ -71,10 +73,12 @@ export async function getContributorById(
       .orderBy('createdAt', 'desc')
       .get();
 
-    const transactions = txSnapshot.docs.map((d) => ({
-      ...d.data(),
-      id: d.id,
-    }));
+    const transactions = txSnapshot.docs.map((d) =>
+      serializeDoc({
+        ...d.data(),
+        id: d.id,
+      })
+    );
 
     return { success: true, data: { contributor, transactions } };
   } catch (error) {

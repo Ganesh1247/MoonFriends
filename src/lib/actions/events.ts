@@ -5,6 +5,7 @@ import { requireRole } from '@/lib/firebase/auth-session';
 import { eventSchema } from '@/lib/validations/event';
 import { COLLECTIONS } from '@/lib/constants';
 import { Timestamp } from 'firebase-admin/firestore';
+import { serializeDoc } from '@/lib/utils';
 import type { EventSchedule, ActionResult } from '@/types';
 
 export async function getEvents(): Promise<ActionResult<EventSchedule[]>> {
@@ -16,10 +17,12 @@ export async function getEvents(): Promise<ActionResult<EventSchedule[]>> {
 
     const events: EventSchedule[] = [];
     snapshot.forEach((doc) => {
-      events.push({
-        ...(doc.data() as EventSchedule),
-        id: doc.id,
-      });
+      events.push(
+        serializeDoc({
+          ...doc.data(),
+          id: doc.id,
+        })
+      );
     });
 
     return { success: true, data: events };
@@ -36,7 +39,7 @@ export async function createEvent(
   formData: Record<string, unknown>
 ): Promise<ActionResult<{ id: string }>> {
   try {
-    await requireRole(['admin', 'treasurer']);
+    await requireRole(['admin']);
 
     const parsed = eventSchema.safeParse(formData);
     if (!parsed.success) {
@@ -73,7 +76,7 @@ export async function updateEvent(
   formData: Record<string, unknown>
 ): Promise<ActionResult> {
   try {
-    await requireRole(['admin', 'treasurer']);
+    await requireRole(['admin']);
 
     const parsed = eventSchema.safeParse(formData);
     if (!parsed.success) {
