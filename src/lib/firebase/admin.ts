@@ -10,26 +10,34 @@ function getFirebaseAdminApp() {
 
   // Parse the service account key from environment variable
   let serviceAccount: ServiceAccount;
+  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+
+  if (!raw || raw.trim() === '' || raw.trim() === '{}') {
+    throw new Error(
+      'FIREBASE_SERVICE_ACCOUNT_KEY is not set. Add it in Vercel Settings → Environment Variables.'
+    );
+  }
+
   try {
-    const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (!raw || raw === '{}') {
-      console.warn(
-        '⚠️ FIREBASE_SERVICE_ACCOUNT_KEY not set. Admin SDK will use application default credentials.'
-      );
-      return initializeApp({
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      });
+    // Attempt 1: direct parse (works when Vercel preserves real newlines in the JSON)
+    let parsed: any;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      // Attempt 2: Vercel sometimes double-escapes newlines — try replacing \\n with \n first
+      parsed = JSON.parse(raw.replace(/\\n/g, '\n'));
     }
-    const parsed = JSON.parse(raw);
-    // Vercel may store the private_key with escaped \n instead of real newlines.
-    // Replace them so the Admin SDK RSA parser works correctly.
+
+    // Guarantee private_key uses real newline characters (not the two-char sequence)
     if (parsed.private_key) {
       parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
     }
+
     serviceAccount = parsed as ServiceAccount;
-  } catch {
+  } catch (e) {
     throw new Error(
-      'Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY. Ensure it is valid JSON.'
+      `Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY: ${e instanceof Error ? e.message : e}. ` +
+      'Paste the raw JSON file content (not the .env.local value) into Vercel.'
     );
   }
 
