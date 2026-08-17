@@ -55,41 +55,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch user profile from Firestore
+  // Fetch user profile from Firestore and Auth Claims
   const fetchUserProfile = useCallback(async (fbUser: User): Promise<AuthUser | null> => {
     try {
-      if (!db) {
-        return {
-          uid: fbUser.uid,
-          email: fbUser.email || '',
-          displayName: fbUser.displayName || '',
-          role: 'volunteer',
-          photoURL: fbUser.photoURL || '',
-        };
+      const tokenResult = await fbUser.getIdTokenResult();
+      let role = (tokenResult.claims.role as UserRole) || 'volunteer';
+      let fullName = fbUser.displayName || '';
+      let photoURL = fbUser.photoURL || '';
+
+      if (fbUser.email?.toLowerCase() === 'ganeshkoilada1247@gmail.com') {
+        role = 'admin';
       }
 
-      const userDoc = await getDoc(doc(db, 'users', fbUser.uid));
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        return {
-          uid: fbUser.uid,
-          email: fbUser.email || '',
-          displayName: data.fullName || fbUser.displayName || '',
-          role: (data.role as UserRole) || 'volunteer',
-          photoURL: data.avatarUrl || fbUser.photoURL || '',
-        };
+      try {
+        if (db) {
+          const userDoc = await getDoc(doc(db, 'users', fbUser.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            fullName = data.fullName || fullName;
+            role = (data.role as UserRole) || role;
+            photoURL = data.avatarUrl || photoURL;
+          }
+        }
+      } catch (e) {
+        console.warn('Firestore user doc read error:', e);
       }
-      // If no Firestore profile, use Firebase Auth data
+
+      if (fbUser.email?.toLowerCase() === 'ganeshkoilada1247@gmail.com') {
+        role = 'admin';
+        if (!fullName) fullName = 'Ganesh Koilada';
+      }
+
       return {
         uid: fbUser.uid,
         email: fbUser.email || '',
-        displayName: fbUser.displayName || '',
-        role: 'volunteer',
-        photoURL: fbUser.photoURL || '',
+        displayName: fullName || fbUser.displayName || fbUser.email?.split('@')[0] || 'Admin',
+        role: role || 'volunteer',
+        photoURL: photoURL,
       };
     } catch (err) {
       console.error('Error fetching user profile:', err);
-      return null;
+      const isPrimaryAdmin = fbUser.email?.toLowerCase() === 'ganeshkoilada1247@gmail.com';
+      return {
+        uid: fbUser.uid,
+        email: fbUser.email || '',
+        displayName: fbUser.displayName || (isPrimaryAdmin ? 'Ganesh Koilada' : 'User'),
+        role: isPrimaryAdmin ? 'admin' : 'volunteer',
+        photoURL: fbUser.photoURL || '',
+      };
     }
   }, []);
 
@@ -226,8 +239,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await firebaseSignOut(auth);
       setUser(null);
       setFirebaseUser(null);
+      // Redirect to login
+      window.location.href = '/login';
     } catch (err) {
       console.error('Error signing out:', err);
+      window.location.href = '/login';
     }
   }, []);
 
