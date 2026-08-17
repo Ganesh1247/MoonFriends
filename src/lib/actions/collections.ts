@@ -419,3 +419,62 @@ export async function cancelCollection(
     };
   }
 }
+
+export async function getCollections(): Promise<ActionResult<any[]>> {
+  try {
+    const snapshot = await adminDb
+      .collection(COLLECTIONS.COLLECTION_TRANSACTIONS)
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    const list: any[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      list.push({
+        ...data,
+        id: doc.id,
+        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
+        updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+      });
+    });
+
+    return { success: true, data: list };
+  } catch (error) {
+    console.error('Error fetching collections:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch collections',
+    };
+  }
+}
+
+export async function getCollectionById(id: string): Promise<ActionResult<any>> {
+  try {
+    const docSnap = await adminDb
+      .collection(COLLECTIONS.COLLECTION_TRANSACTIONS)
+      .doc(id)
+      .get();
+
+    if (!docSnap.exists) {
+      return { success: false, error: 'Collection not found' };
+    }
+
+    const data = docSnap.data()!;
+    return {
+      success: true,
+      data: {
+        ...data,
+        id: docSnap.id,
+        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
+        updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching collection by id:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch collection',
+    };
+  }
+}
+

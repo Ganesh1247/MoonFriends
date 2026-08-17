@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
+import { getCollections } from '@/lib/actions/collections';
 import { COLLECTIONS, PAYMENT_MODES } from '@/lib/constants';
 import { formatCurrency, formatDate, getPaymentModeLabel } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -23,21 +24,40 @@ export default function CollectionsPage() {
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
 
   useEffect(() => {
-    const q = query(
-      collection(db, COLLECTIONS.COLLECTION_TRANSACTIONS),
-      orderBy('createdAt', 'desc')
-    );
-
-    const unsub = onSnapshot(q, (snapshot) => {
-      const list: CollectionTransaction[] = [];
-      snapshot.forEach((doc) => {
-        list.push({ ...doc.data(), id: doc.id } as CollectionTransaction);
-      });
-      setCollections(list);
+    // Initial fetch via Server Action
+    getCollections().then((res) => {
+      if (res.success && res.data) {
+        setCollections(res.data as CollectionTransaction[]);
+      }
       setLoading(false);
     });
 
-    return () => unsub();
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.COLLECTION_TRANSACTIONS),
+        orderBy('createdAt', 'desc')
+      );
+
+      const unsub = onSnapshot(
+        q,
+        (snapshot) => {
+          const list: CollectionTransaction[] = [];
+          snapshot.forEach((doc) => {
+            list.push({ ...doc.data(), id: doc.id } as CollectionTransaction);
+          });
+          setCollections(list);
+          setLoading(false);
+        },
+        (error) => {
+          console.warn('Realtime collection listener error (using server action data):', error);
+          setLoading(false);
+        }
+      );
+
+      return () => unsub();
+    } catch {
+      // Ignore client listener error
+    }
   }, []);
 
   const filteredCollections = collections.filter((c) => {

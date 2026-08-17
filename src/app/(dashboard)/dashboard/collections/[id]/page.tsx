@@ -3,9 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
-import { cancelCollection } from '@/lib/actions/collections';
+import { getCollectionById, cancelCollection } from '@/lib/actions/collections';
 import { COLLECTIONS } from '@/lib/constants';
 import { formatCurrency, formatDate, getPaymentModeLabel } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -42,15 +40,15 @@ export default function CollectionDetailPage({
   useEffect(() => {
     async function fetchCollection() {
       try {
-        const docRef = doc(db, COLLECTIONS.COLLECTION_TRANSACTIONS, resolvedParams.id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setCollection({ ...docSnap.data(), id: docSnap.id } as CollectionTransaction);
+        const res = await getCollectionById(resolvedParams.id);
+        if (res.success && res.data) {
+          setCollection(res.data as CollectionTransaction);
         } else {
-          toast.error('Collection not found');
+          toast.error(res.error || 'Collection not found');
         }
       } catch (err) {
         console.error(err);
+        toast.error('Failed to load collection');
       } finally {
         setLoading(false);
       }

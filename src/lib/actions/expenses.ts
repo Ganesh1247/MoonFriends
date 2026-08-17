@@ -417,3 +417,62 @@ export async function cancelExpense(
     };
   }
 }
+
+export async function getExpenses(): Promise<ActionResult<any[]>> {
+  try {
+    const snapshot = await adminDb
+      .collection(COLLECTIONS.EXPENSE_TRANSACTIONS)
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    const list: any[] = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      list.push({
+        ...data,
+        id: doc.id,
+        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
+        updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+      });
+    });
+
+    return { success: true, data: list };
+  } catch (error) {
+    console.error('Error fetching expenses:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch expenses',
+    };
+  }
+}
+
+export async function getExpenseById(id: string): Promise<ActionResult<any>> {
+  try {
+    const docSnap = await adminDb
+      .collection(COLLECTIONS.EXPENSE_TRANSACTIONS)
+      .doc(id)
+      .get();
+
+    if (!docSnap.exists) {
+      return { success: false, error: 'Expense not found' };
+    }
+
+    const data = docSnap.data()!;
+    return {
+      success: true,
+      data: {
+        ...data,
+        id: docSnap.id,
+        createdAt: data.createdAt?.toDate?.() ? data.createdAt.toDate().toISOString() : data.createdAt,
+        updatedAt: data.updatedAt?.toDate?.() ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching expense by id:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch expense',
+    };
+  }
+}
+

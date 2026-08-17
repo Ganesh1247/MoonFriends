@@ -3,9 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/client';
-import { cancelExpense } from '@/lib/actions/expenses';
+import { getExpenseById, cancelExpense } from '@/lib/actions/expenses';
 import { COLLECTIONS } from '@/lib/constants';
 import { formatCurrency, formatDate, getPaymentModeLabel } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -42,15 +40,15 @@ export default function ExpenseDetailPage({
   useEffect(() => {
     async function fetchExpense() {
       try {
-        const docRef = doc(db, COLLECTIONS.EXPENSE_TRANSACTIONS, resolvedParams.id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setExpense({ ...docSnap.data(), id: docSnap.id } as ExpenseTransaction);
+        const res = await getExpenseById(resolvedParams.id);
+        if (res.success && res.data) {
+          setExpense(res.data as ExpenseTransaction);
         } else {
-          toast.error('Expense not found');
+          toast.error(res.error || 'Expense not found');
         }
       } catch (err) {
         console.error(err);
+        toast.error('Failed to load expense');
       } finally {
         setLoading(false);
       }

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
+import { getExpenses } from '@/lib/actions/expenses';
 import { COLLECTIONS } from '@/lib/constants';
 import { formatCurrency, formatDate, getPaymentModeLabel } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -25,21 +26,40 @@ export default function ExpensesPage() {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
   useEffect(() => {
-    const q = query(
-      collection(db, COLLECTIONS.EXPENSE_TRANSACTIONS),
-      orderBy('createdAt', 'desc')
-    );
-
-    const unsub = onSnapshot(q, (snapshot) => {
-      const list: ExpenseTransaction[] = [];
-      snapshot.forEach((doc) => {
-        list.push({ ...doc.data(), id: doc.id } as ExpenseTransaction);
-      });
-      setExpenses(list);
+    // Initial fetch via Server Action
+    getExpenses().then((res) => {
+      if (res.success && res.data) {
+        setExpenses(res.data as ExpenseTransaction[]);
+      }
       setLoading(false);
     });
 
-    return () => unsub();
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.EXPENSE_TRANSACTIONS),
+        orderBy('createdAt', 'desc')
+      );
+
+      const unsub = onSnapshot(
+        q,
+        (snapshot) => {
+          const list: ExpenseTransaction[] = [];
+          snapshot.forEach((doc) => {
+            list.push({ ...doc.data(), id: doc.id } as ExpenseTransaction);
+          });
+          setExpenses(list);
+          setLoading(false);
+        },
+        (error) => {
+          console.warn('Realtime expense listener error:', error);
+          setLoading(false);
+        }
+      );
+
+      return () => unsub();
+    } catch {
+      // Ignore client listener error
+    }
   }, []);
 
   const categories = Array.from(new Set(expenses.map((e) => e.categoryName).filter(Boolean)));
