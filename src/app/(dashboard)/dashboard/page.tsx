@@ -63,6 +63,8 @@ export default function DashboardPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [events, setEvents] = useState<EventSchedule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [allCollections, setAllCollections] = useState<any[]>([]);
+  const [allExpenses, setAllExpenses] = useState<any[]>([]);
 
   // Initial fetch via Server Actions
   useEffect(() => {
@@ -76,10 +78,12 @@ export default function DashboardPage() {
     getEvents().then((res) => {
       if (res.success && res.data) setEvents(res.data.slice(0, 4));
     });
-    // Load recent activity from collections and expenses
+    // Load recent activity from collections and expenses + chart data
     Promise.all([getCollections(), getExpenses()]).then(([cRes, eRes]) => {
       const cols = (cRes.success && cRes.data ? cRes.data : []).map((c: any) => ({ ...c, txType: 'collection' as const }));
       const exps = (eRes.success && eRes.data ? eRes.data : []).map((e: any) => ({ ...e, txType: 'expense' as const }));
+      setAllCollections(cols);
+      setAllExpenses(exps);
       const merged = [...cols, ...exps].sort((a: any, b: any) => {
         const timeA = new Date(a.createdAt || a.collectionDate || a.expenseDate || 0).getTime();
         const timeB = new Date(b.createdAt || b.collectionDate || b.expenseDate || 0).getTime();
@@ -132,22 +136,51 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Payment mode data for pie chart
-  const paymentModeData = [
-    { name: 'UPI', value: 45, color: '#8B5CF6' },
-    { name: 'Cash', value: 35, color: '#22C55E' },
-    { name: 'Bank Transfer', value: 20, color: '#3B82F6' },
-  ];
+  // ── Live Payment Mode breakdown from collections ──────────────
+  const PAYMENT_COLORS: Record<string, string> = {
+    upi: '#8B5CF6',
+    cash: '#22C55E',
+    bank_transfer: '#3B82F6',
+    cheque: '#F59E0B',
+    other: '#EC4899',
+  };
+  const PAYMENT_LABELS: Record<string, string> = {
+    upi: 'UPI',
+    cash: 'Cash',
+    bank_transfer: 'Bank Transfer',
+    cheque: 'Cheque',
+    other: 'Other',
+  };
 
-  // Category expense preview data
-  const categoryData = [
-    { name: 'Idol', amount: 15000 },
-    { name: 'Decoration', amount: 12000 },
-    { name: 'Sound System', amount: 8000 },
-    { name: 'Lighting', amount: 6500 },
-    { name: 'Food', amount: 4500 },
-    { name: 'Pooja', amount: 3500 },
-  ];
+  const paymentModeMap: Record<string, number> = {};
+  allCollections.forEach((c: any) => {
+    const mode = (c.paymentMode || 'other').toLowerCase();
+    paymentModeMap[mode] = (paymentModeMap[mode] || 0) + (c.amount || 0);
+  });
+  const totalColAmount = Object.values(paymentModeMap).reduce((a, b) => a + b, 0) || 1;
+  const paymentModeData = Object.entries(paymentModeMap)
+    .filter(([, amt]) => amt > 0)
+    .map(([mode, amt]) => ({
+      name: PAYMENT_LABELS[mode] || mode,
+      value: Math.round((amt / totalColAmount) * 100),
+      amount: amt,
+      color: PAYMENT_COLORS[mode] || '#6B7280',
+    }));
+  // Fallback placeholder when no data
+  const paymentDisplayData = paymentModeData.length > 0
+    ? paymentModeData
+    : [{ name: 'No Data', value: 100, amount: 0, color: '#374151' }];
+
+  // ── Live Category Expense breakdown from expenses ────────────
+  const categoryMap: Record<string, number> = {};
+  allExpenses.forEach((e: any) => {
+    const cat = e.categoryName || 'Miscellaneous';
+    categoryMap[cat] = (categoryMap[cat] || 0) + (e.amount || 0);
+  });
+  const categoryData = Object.entries(categoryMap)
+    .map(([name, amount]) => ({ name, amount }))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 8);
 
   return (
     <div className="space-y-8">
@@ -344,23 +377,31 @@ export default function DashboardPage() {
             </Link>
           </CardHeader>
           <CardContent className="flex-1 pt-4">
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={categoryData} layout="vertical" margin={{ left: 10, right: 20 }}>
-                  <XAxis type="number" tickFormatter={(v) => `₹${v / 1000}k`} stroke="#8B8FA3" fontSize={11} />
-                  <YAxis type="category" dataKey="name" stroke="#8B8FA3" fontSize={11} width={80} />
-                  <Tooltip
-                    formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN')}`, 'Amount']}
-                    contentStyle={{ backgroundColor: '#1A2340', borderColor: '#D4A843', borderRadius: '8px', color: '#F5F0E8' }}
-                  />
-                  <Bar dataKey="amount" fill="#D4A843" radius={[0, 6, 6, 0]}>
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {categoryData.length === 0 ? (
+              <div className="h-48 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                <span className="text-3xl">🧾</span>
+                <p className="text-sm font-medium">No expenses recorded yet</p>
+                <p className="text-xs opacity-60">Add expenses to see the distribution</p>
+              </div>
+            ) : (
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={categoryData} layout="vertical" margin={{ left: 10, right: 30 }}>
+                    <XAxis type="number" tickFormatter={(v) => `₹${(v / 100).toLocaleString('en-IN')}`} stroke="#8B8FA3" fontSize={11} />
+                    <YAxis type="category" dataKey="name" stroke="#8B8FA3" fontSize={11} width={90} />
+                    <Tooltip
+                      formatter={(value: any) => [`₹${(Number(value) / 100).toLocaleString('en-IN')}`, 'Amount']}
+                      contentStyle={{ backgroundColor: '#1A2340', borderColor: '#D4A843', borderRadius: '8px', color: '#F5F0E8' }}
+                    />
+                    <Bar dataKey="amount" fill="#D4A843" radius={[0, 6, 6, 0]}>
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -438,39 +479,62 @@ export default function DashboardPage() {
           <Card className="glass border-border/50">
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-bold">Payment Mode Split</CardTitle>
-              <CardDescription className="text-xs">UPI vs Cash vs Bank Transfer</CardDescription>
+              <CardDescription className="text-xs">Collection breakdown by payment method</CardDescription>
             </CardHeader>
             <CardContent className="pt-2 flex flex-col items-center">
-              <div className="h-44 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={paymentModeData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={45}
-                      outerRadius={65}
-                      paddingAngle={4}
-                      dataKey="value"
-                    >
-                      {paymentModeData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(val: any) => [`${val}%`, 'Share']}
-                      contentStyle={{ backgroundColor: '#1A2340', borderColor: '#D4A843', borderRadius: '8px', color: '#F5F0E8' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex justify-center gap-4 text-xs mt-2">
-                {paymentModeData.map((item) => (
-                  <div key={item.name} className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-muted-foreground">{item.name}</span>
+              {paymentModeData.length === 0 ? (
+                <div className="h-44 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <span className="text-3xl">💳</span>
+                  <p className="text-sm font-medium">No collections yet</p>
+                </div>
+              ) : (
+                <div className="h-44 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={paymentDisplayData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={65}
+                        paddingAngle={4}
+                        dataKey="value"
+                      >
+                        {paymentDisplayData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(val: any, name: any, props: any) => [
+                          `${val}% · ₹${(props.payload.amount / 100).toLocaleString('en-IN')}`,
+                          props.payload.name,
+                        ]}
+                        contentStyle={{ backgroundColor: '#1A2340', borderColor: '#D4A843', borderRadius: '8px', color: '#F5F0E8', fontSize: '12px' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+              {/* Per-mode amount legend */}
+              <div className="w-full mt-3 space-y-1.5">
+                {paymentDisplayData.filter(i => i.amount > 0).map((item) => (
+                  <div key={item.name} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
+                      <span className="text-muted-foreground">{item.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-foreground">₹{(item.amount / 100).toLocaleString('en-IN')}</span>
+                      <span className="text-muted-foreground/60 text-[10px]">({item.value}%)</span>
+                    </div>
                   </div>
                 ))}
+                {paymentDisplayData.filter(i => i.amount > 0).length > 0 && (
+                  <div className="flex items-center justify-between text-xs pt-1.5 border-t border-border/30">
+                    <span className="text-muted-foreground font-medium">Total</span>
+                    <span className="font-bold text-gold">₹{(totalColAmount / 100).toLocaleString('en-IN')}</span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
