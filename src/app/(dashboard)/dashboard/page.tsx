@@ -12,6 +12,7 @@ import { getFinancialSummary } from '@/lib/actions/reports';
 import { getAnnouncements } from '@/lib/actions/announcements';
 import { getEvents } from '@/lib/actions/events';
 import { getCollections } from '@/lib/actions/collections';
+import { getExpenses } from '@/lib/actions/expenses';
 import { MoonFundOrb } from '@/components/moon/moon-fund-orb';
 import { StatCard } from '@/components/moon/stat-card';
 import { MoonProgress } from '@/components/moon/moon-progress';
@@ -75,10 +76,17 @@ export default function DashboardPage() {
     getEvents().then((res) => {
       if (res.success && res.data) setEvents(res.data.slice(0, 4));
     });
-    getCollections().then((res) => {
-      if (res.success && res.data && res.data.length > 0) {
-        const list = res.data;
-        setRecentTransactions((prev) => (prev.length === 0 ? list.slice(0, 7) : prev));
+    // Load recent activity from collections and expenses
+    Promise.all([getCollections(), getExpenses()]).then(([cRes, eRes]) => {
+      const cols = (cRes.success && cRes.data ? cRes.data : []).map((c: any) => ({ ...c, txType: 'collection' as const }));
+      const exps = (eRes.success && eRes.data ? eRes.data : []).map((e: any) => ({ ...e, txType: 'expense' as const }));
+      const merged = [...cols, ...exps].sort((a: any, b: any) => {
+        const timeA = new Date(a.createdAt || a.collectionDate || a.expenseDate || 0).getTime();
+        const timeB = new Date(b.createdAt || b.collectionDate || b.expenseDate || 0).getTime();
+        return timeB - timeA;
+      });
+      if (merged.length > 0) {
+        setRecentTransactions(merged.slice(0, 7));
       }
     });
 
@@ -391,23 +399,36 @@ export default function DashboardPage() {
             />
           ) : (
             <div className="space-y-2.5">
-              {recentTransactions.map((tx, idx) => (
-                <TransactionCard
-                  key={tx.id || idx}
-                  type={tx.txType}
-                  transactionId={tx.transactionId || 'TX-2026'}
-                  name={tx.txType === 'collection' ? tx.contributorName : tx.paidTo}
-                  amount={tx.amount || 0}
-                  paymentMode={tx.paymentMode || 'cash'}
-                  note={tx.note || ''}
-                  date={tx.collectionDate || tx.expenseDate || '2026-08-17'}
-                  createdAt={new Date((tx.createdAt?.seconds || Date.now() / 1000) * 1000)}
-                  status={tx.status || 'active'}
-                  categoryName={tx.categoryName}
-                  houseNumber={tx.houseNumber}
-                  index={idx}
-                />
-              ))}
+              {recentTransactions.map((tx, idx) => {
+                const isExpense = tx.txType === 'expense';
+                let cardDate = new Date();
+                if (tx.createdAt) {
+                  if (typeof tx.createdAt === 'string') {
+                    const parsed = new Date(tx.createdAt);
+                    if (!isNaN(parsed.getTime())) cardDate = parsed;
+                  } else if (tx.createdAt.seconds) {
+                    cardDate = new Date(tx.createdAt.seconds * 1000);
+                  }
+                }
+
+                return (
+                  <TransactionCard
+                    key={tx.id || idx}
+                    type={isExpense ? 'expense' : 'collection'}
+                    transactionId={tx.transactionId || (isExpense ? 'EXP-2026' : 'COL-2026')}
+                    name={isExpense ? (tx.paidTo || 'Vendor') : (tx.contributorName || 'Devotee')}
+                    amount={tx.amount || 0}
+                    paymentMode={tx.paymentMode || 'cash'}
+                    note={tx.note || ''}
+                    date={tx.collectionDate || tx.expenseDate || cardDate.toISOString()}
+                    createdAt={cardDate}
+                    status={tx.status || 'active'}
+                    categoryName={tx.categoryName}
+                    houseNumber={tx.houseNumber}
+                    index={idx}
+                  />
+                );
+              })}
             </div>
           )}
         </div>

@@ -13,27 +13,54 @@ export async function getFinancialSummary(): Promise<ActionResult<FinancialSumma
   try {
     await requireAuth();
 
-    const summaryRef = adminDb.collection(COLLECTIONS.FINANCIAL_SUMMARY).doc('current');
-    const doc = await summaryRef.get();
+    // Sum active collections
+    const collectionsSnapshot = await adminDb
+      .collection(COLLECTIONS.COLLECTION_TRANSACTIONS)
+      .where('status', '==', 'active')
+      .get();
 
-    if (!doc.exists) {
-      return {
-        success: true,
-        data: {
-          totalCollections: 0,
-          totalExpenses: 0,
-          availableBalance: 0,
-          contributorCount: 0,
-          collectionCount: 0,
-          expenseCount: 0,
-          lastUpdated: Timestamp.now() as any,
-        },
-      };
-    }
+    let totalCollections = 0;
+    const uniqueContributors = new Set<string>();
+    collectionsSnapshot.forEach((doc) => {
+      const data = doc.data();
+      totalCollections += Number(data.amount || 0);
+      if (data.contributorName) {
+        uniqueContributors.add(`${data.contributorName.trim().toLowerCase()}-${(data.houseNumber || '').trim().toLowerCase()}`);
+      }
+    });
+
+    // Sum active expenses
+    const expensesSnapshot = await adminDb
+      .collection(COLLECTIONS.EXPENSE_TRANSACTIONS)
+      .where('status', '==', 'active')
+      .get();
+
+    let totalExpenses = 0;
+    expensesSnapshot.forEach((doc) => {
+      const data = doc.data();
+      totalExpenses += Number(data.amount || 0);
+    });
+
+    const summary: FinancialSummary = {
+      totalCollections,
+      totalExpenses,
+      availableBalance: totalCollections - totalExpenses,
+      contributorCount: uniqueContributors.size,
+      collectionCount: collectionsSnapshot.size,
+      expenseCount: expensesSnapshot.size,
+      lastUpdated: Timestamp.now() as any,
+    };
+
+    // Save to financial_summary/current document
+    adminDb
+      .collection(COLLECTIONS.FINANCIAL_SUMMARY)
+      .doc('current')
+      .set(summary, { merge: true })
+      .catch(() => {});
 
     return {
       success: true,
-      data: doc.data() as FinancialSummary,
+      data: summary,
     };
   } catch (error) {
     console.error('Error fetching financial summary:', error);
