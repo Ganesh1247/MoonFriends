@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
-  Moon, Calendar, Users, MapPin, ArrowRight,
+  Calendar, Users, MapPin, ArrowRight,
   Sparkles, Heart, Star, Bell, Megaphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -61,14 +62,21 @@ export default function HomePage() {
         </div>
 
         <div className="relative z-10 text-center px-4 sm:px-6 max-w-4xl mx-auto">
-          {/* Moon icon */}
+          {/* Ganesh idol icon */}
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, type: 'spring' }}
-            className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gold/10 mb-8 glow-gold"
+            className="inline-flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden mb-6 border-4 border-gold/40 shadow-2xl glow-gold"
           >
-            <Moon className="w-10 h-10 text-gold" />
+            <Image
+              src="/ganesh-logo.jpg"
+              alt="Lord Ganesha"
+              width={112}
+              height={112}
+              className="w-full h-full object-cover"
+              priority
+            />
           </motion.div>
 
           {/* Title */}
@@ -78,7 +86,7 @@ export default function HomePage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight"
           >
-            <span className="text-gradient-gold">🌙 {APP_NAME}</span>
+            <span className="text-gradient-gold">🙏 {APP_NAME}</span>
           </motion.h1>
 
           {/* Event name */}

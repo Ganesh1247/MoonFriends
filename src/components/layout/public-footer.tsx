@@ -1,16 +1,23 @@
 import Link from 'next/link';
-import { Moon, Heart } from 'lucide-react';
+import Image from 'next/image';
+import { Heart } from 'lucide-react';
 
 export function PublicFooter() {
   return (
     <footer className="border-t border-border/30 bg-night-deep/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-gold/10">
-                <Moon className="w-5 h-5 text-gold" />
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gold/40 shadow-md glow-gold">
+                <Image
+                  src="/ganesh-logo.jpg"
+                  alt="Ganesh"
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <span className="text-sm font-bold text-gradient-gold">MOON FRIENDS</span>
@@ -62,7 +69,7 @@ export function PublicFooter() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-10 pt-6 border-t border-border/20 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="mt-8 sm:mt-10 pt-6 border-t border-border/20 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">
             © 2026 Moon Friends. All rights reserved.
           </p>

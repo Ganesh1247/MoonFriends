@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
@@ -15,7 +16,6 @@ import {
   FileBarChart,
   History,
   Settings,
-  Moon,
   LogOut,
   Bell,
 } from 'lucide-react';
@@ -29,6 +29,7 @@ const navItems = [
   { href: '/dashboard/contributors', label: 'Contributors', icon: Users, role: 'volunteer' },
   { href: '/dashboard/events', label: 'Events & Schedule', icon: Calendar, role: 'volunteer' },
   { href: '/dashboard/volunteers', label: 'Volunteers', icon: UserCheck, role: 'volunteer' },
+  { href: '/dashboard/members', label: 'Committee Members', icon: Users, role: 'admin' },
   { href: '/dashboard/inventory', label: 'Inventory', icon: Package, role: 'treasurer' },
   { href: '/dashboard/reports', label: 'Financial Reports', icon: FileBarChart, role: 'treasurer' },
   { href: '/dashboard/announcements', label: 'Announcements', icon: Bell, role: 'volunteer' },
@@ -50,8 +51,14 @@ export function DashboardSidebar() {
     <aside className="hidden md:flex flex-col w-64 border-r border-border/40 bg-sidebar/90 backdrop-blur-xl h-screen sticky top-0">
       {/* Brand Header */}
       <div className="p-5 border-b border-border/30 flex items-center gap-3">
-        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gold/10 glow-gold">
-          <Moon className="w-5 h-5 text-gold" />
+        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-gold/40 shadow-md glow-gold flex-shrink-0">
+          <Image
+            src="/ganesh-logo.jpg"
+            alt="Ganesh"
+            width={40}
+            height={40}
+            className="w-full h-full object-cover"
+          />
         </div>
         <div className="flex flex-col">
           <span className="font-bold text-sm text-gradient-gold">MOON FRIENDS</span>

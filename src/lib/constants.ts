@@ -128,6 +128,7 @@ export const COLLECTIONS = {
   ANNOUNCEMENTS: 'announcements',
   DAILY_CLOSINGS: 'daily_closings',
   SETTINGS: 'settings',
+  MEMBERS: 'members',
   FINANCIAL_SUMMARY: '_financial_summary',
   COUNTERS: '_counters',
 } as const;

@@ -43,6 +43,7 @@ export function MobileBottomBar() {
   const moreTabs = [
     { href: '/dashboard/events', label: 'Events & Schedule', icon: Calendar },
     { href: '/dashboard/volunteers', label: 'Volunteers', icon: UserCheck },
+    { href: '/dashboard/members', label: 'Committee Members', icon: Users, hide: !isAdmin },
     { href: '/dashboard/inventory', label: 'Inventory', icon: Package, hide: !isAdmin && !isTreasurer },
     { href: '/dashboard/reports', label: 'Financial Reports', icon: FileBarChart, hide: !isAdmin && !isTreasurer },
     { href: '/dashboard/announcements', label: 'Announcements', icon: Bell },
