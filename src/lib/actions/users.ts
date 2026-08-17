@@ -43,12 +43,15 @@ export async function createUser(data: {
   try {
     const adminUser = await requireRole(['admin']);
 
+    const sanitizedPhone = data.phone?.replace(/[^0-9]/g, '') || '';
+    const validE164 = sanitizedPhone.length === 10 ? `+91${sanitizedPhone}` : undefined;
+
     // 1. Create in Firebase Auth
     const userRecord = await adminAuth.createUser({
       email: data.email,
       password: data.password || 'MoonFriends2026!',
       displayName: data.fullName,
-      phoneNumber: data.phone.startsWith('+91') ? data.phone : `+91${data.phone}`,
+      ...(validE164 ? { phoneNumber: validE164 } : {}),
     });
 
     // 2. Set Custom Claims for role

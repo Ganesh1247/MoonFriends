@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { adminAuth } from './admin';
+import { adminAuth, adminDb } from './admin';
 
 const SESSION_COOKIE_NAME = '__session';
 const SESSION_EXPIRY_DAYS = 5;
@@ -61,14 +61,34 @@ export async function getCurrentUser() {
 
   try {
     const userRecord = await adminAuth.getUser(claims.uid);
+    let role = (userRecord.customClaims?.role as string) || (claims.role as string);
+
+    // Fallback: check Firestore document if role is not set or defaulted
+    if (!role || role === 'volunteer') {
+      try {
+        const userDoc = await adminDb.collection('users').doc(claims.uid).get();
+        if (userDoc.exists && userDoc.data()?.role) {
+          role = userDoc.data()?.role as string;
+        }
+      } catch {
+        // Firestore read failed, proceed with existing role
+      }
+    }
+
+    // Explicit fallback for primary admin email
+    if (userRecord.email?.toLowerCase() === 'ganeshkoilada1247@gmail.com') {
+      role = 'admin';
+    }
+
     return {
       uid: claims.uid,
-      email: claims.email || '',
-      displayName: userRecord.displayName || '',
-      role: (claims.role as string) || 'volunteer',
-      photoURL: userRecord.photoURL || '',
+      email: claims.email || userRecord.email || '',
+      displayName: userRecord.displayName || (claims.name as string) || '',
+      role: (role as any) || 'volunteer',
+      photoURL: userRecord.photoURL || (claims.picture as string) || '',
     };
-  } catch {
+  } catch (err) {
+    console.error('Error in getCurrentUser:', err);
     return null;
   }
 }

@@ -39,6 +39,14 @@ export async function createCollection(
 
     const amountPaise = rupeesToPaise(data.amount);
 
+    // Check existing contributor before transaction
+    const contributorsRef = adminDb.collection(COLLECTIONS.CONTRIBUTORS);
+    const existingContributor = await contributorsRef
+      .where('name', '==', data.contributorName)
+      .where('houseNumber', '==', data.houseNumber)
+      .limit(1)
+      .get();
+
     // 3. Firestore transaction
     const result = await adminDb.runTransaction(async (transaction) => {
       // Read counter
@@ -55,14 +63,6 @@ export async function createCollection(
       // Read financial summary
       const summaryRef = adminDb.collection(COLLECTIONS.FINANCIAL_SUMMARY).doc('current');
       const summaryDoc = await transaction.get(summaryRef);
-
-      // Check/create contributor
-      const contributorsRef = adminDb.collection(COLLECTIONS.CONTRIBUTORS);
-      const existingContributor = await contributorsRef
-        .where('name', '==', data.contributorName)
-        .where('houseNumber', '==', data.houseNumber)
-        .limit(1)
-        .get();
 
       let contributorId: string;
 
