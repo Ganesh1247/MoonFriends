@@ -36,7 +36,7 @@ export async function createAnnouncement(data: {
   content: string;
 }): Promise<ActionResult<{ id: string }>> {
   try {
-    const user = await requireRole(['admin', 'treasurer', 'volunteer']);
+    const user = await requireRole(['admin']);
 
     if (!data.title?.trim() || !data.content?.trim()) {
       return { success: false, error: 'Title and content are required' };

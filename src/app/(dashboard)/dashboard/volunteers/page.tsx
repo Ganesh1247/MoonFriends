@@ -104,12 +104,14 @@ export default function VolunteersPage() {
           </p>
         </div>
 
-        <Button
-          onClick={() => setModalOpen(true)}
-          className="bg-gold hover:bg-gold-dark text-night-deep font-bold shadow-lg glow-gold h-11 px-5"
-        >
-          <Plus className="w-4 h-4 mr-1.5" /> + Register Volunteer
-        </Button>
+        {isAdmin && (
+          <Button
+            onClick={() => setModalOpen(true)}
+            className="bg-gold hover:bg-gold-dark text-night-deep font-bold shadow-lg glow-gold h-11 px-5"
+          >
+            <Plus className="w-4 h-4 mr-1.5" /> + Register Volunteer
+          </Button>
+        )}
       </div>
 
       {/* Volunteer Cards Grid */}

@@ -6,7 +6,12 @@ import { motion } from 'framer-motion';
 import { onSnapshot, doc, collection, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '@/lib/firebase/client';
 import { COLLECTIONS, PAYMENT_MODE_COLORS, CATEGORY_COLORS } from '@/lib/constants';
-import { formatCurrency, paiseToRupees } from '@/lib/utils';
+import { formatCurrency, paiseToRupees, formatDate } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
+import { getFinancialSummary } from '@/lib/actions/reports';
+import { getAnnouncements } from '@/lib/actions/announcements';
+import { getEvents } from '@/lib/actions/events';
+import { getCollections } from '@/lib/actions/collections';
 import { MoonFundOrb } from '@/components/moon/moon-fund-orb';
 import { StatCard } from '@/components/moon/stat-card';
 import { MoonProgress } from '@/components/moon/moon-progress';
@@ -14,6 +19,7 @@ import { TransactionCard } from '@/components/moon/transaction-card';
 import { EmptyState } from '@/components/moon/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -25,6 +31,8 @@ import {
   Sparkles,
   TrendingUp,
   Receipt,
+  Bell,
+  Megaphone,
 } from 'lucide-react';
 import {
   PieChart,
@@ -37,8 +45,10 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import type { Announcement, EventSchedule } from '@/types';
 
 export default function DashboardPage() {
+  const { user, isAdmin, isTreasurer } = useAuth();
   const [financialSummary, setFinancialSummary] = useState({
     totalCollections: 0,
     totalExpenses: 0,
@@ -49,68 +59,69 @@ export default function DashboardPage() {
   });
 
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [events, setEvents] = useState<EventSchedule[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Real-time Firestore Listeners
+  // Initial fetch via Server Actions
   useEffect(() => {
-    // 1. Live Financial Summary Listener
-    const summaryUnsub = onSnapshot(
-      doc(db, COLLECTIONS.FINANCIAL_SUMMARY, 'current'),
-      (docSnap) => {
-        if (docSnap.exists()) {
-          setFinancialSummary(docSnap.data() as any);
-        }
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Summary listener error:', error);
-        setLoading(false);
+    getFinancialSummary().then((res) => {
+      if (res.success && res.data) setFinancialSummary(res.data as any);
+      setLoading(false);
+    });
+    getAnnouncements().then((res) => {
+      if (res.success && res.data) setAnnouncements(res.data.slice(0, 3));
+    });
+    getEvents().then((res) => {
+      if (res.success && res.data) setEvents(res.data.slice(0, 4));
+    });
+    getCollections().then((res) => {
+      if (res.success && res.data && res.data.length > 0) {
+        const list = res.data;
+        setRecentTransactions((prev) => (prev.length === 0 ? list.slice(0, 7) : prev));
       }
-    );
+    });
 
-    // 2. Live Recent Collections Listener
-    const colQuery = query(
-      collection(db, COLLECTIONS.COLLECTION_TRANSACTIONS),
-      orderBy('createdAt', 'desc'),
-      limit(5)
-    );
+    // Real-time Firestore Listeners
+    try {
+      const summaryUnsub = onSnapshot(
+        doc(db, COLLECTIONS.FINANCIAL_SUMMARY, 'current'),
+        (docSnap) => {
+          if (docSnap.exists()) {
+            setFinancialSummary(docSnap.data() as any);
+          }
+        },
+        () => {}
+      );
 
-    const colUnsub = onSnapshot(colQuery, (colSnap) => {
-      const cols = colSnap.docs.map((d) => ({
-        ...d.data(),
-        id: d.id,
-        txType: 'collection' as const,
-      }));
-
-      // Combine with expenses
-      const expQuery = query(
-        collection(db, COLLECTIONS.EXPENSE_TRANSACTIONS),
+      const colQuery = query(
+        collection(db, COLLECTIONS.COLLECTION_TRANSACTIONS),
         orderBy('createdAt', 'desc'),
         limit(5)
       );
 
-      onSnapshot(expQuery, (expSnap) => {
-        const exps = expSnap.docs.map((d) => ({
-          ...d.data(),
-          id: d.id,
-          txType: 'expense' as const,
-        }));
+      const colUnsub = onSnapshot(
+        colQuery,
+        (colSnap) => {
+          const cols = colSnap.docs.map((d) => ({
+            ...d.data(),
+            id: d.id,
+            txType: 'collection' as const,
+          }));
+          if (cols.length > 0) {
+            setRecentTransactions(cols);
+          }
+        },
+        () => {}
+      );
 
-        // Merge and sort by createdAt
-        const merged = [...cols, ...exps].sort((a: any, b: any) => {
-          const timeA = a.createdAt?.seconds || 0;
-          const timeB = b.createdAt?.seconds || 0;
-          return timeB - timeA;
-        });
-
-        setRecentTransactions(merged.slice(0, 7));
-      });
-    });
-
-    return () => {
-      summaryUnsub();
-      colUnsub();
-    };
+      return () => {
+        summaryUnsub();
+        colUnsub();
+      };
+    } catch {
+      // Ignore listener error
+    }
   }, []);
 
   // Payment mode data for pie chart
@@ -158,16 +169,20 @@ export default function DashboardPage() {
                 <Plus className="w-4 h-4 mr-1.5" /> Add Collection
               </Button>
             </Link>
-            <Link href="/dashboard/expenses/new">
-              <Button className="bg-saffron hover:bg-saffron/90 text-white font-bold shadow-lg glow-saffron h-11 px-5">
-                <Plus className="w-4 h-4 mr-1.5" /> Add Expense
-              </Button>
-            </Link>
-            <Link href="/dashboard/reports">
-              <Button variant="outline" className="border-gold/30 text-gold hover:bg-gold/10 h-11">
-                <FileBarChart className="w-4 h-4 mr-1.5" /> Reports
-              </Button>
-            </Link>
+            {(isAdmin || isTreasurer) && (
+              <>
+                <Link href="/dashboard/expenses/new">
+                  <Button className="bg-saffron hover:bg-saffron/90 text-white font-bold shadow-lg glow-saffron h-11 px-5">
+                    <Plus className="w-4 h-4 mr-1.5" /> Add Expense
+                  </Button>
+                </Link>
+                <Link href="/dashboard/reports">
+                  <Button variant="outline" className="border-gold/30 text-gold hover:bg-gold/10 h-11">
+                    <FileBarChart className="w-4 h-4 mr-1.5" /> Reports
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
@@ -180,7 +195,76 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── 2. Primary Metrics Cards (Animated Count-Up) ────────── */}
+      {/* ── 2. Live Notices & Upcoming Schedule Cards ───────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Latest Announcements */}
+        <Card className="glass border-gold/30 p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Megaphone className="w-4 h-4 text-gold" />
+              <h2 className="text-base font-bold text-gradient-gold">Notice Board & Circulars</h2>
+            </div>
+            <Link href="/dashboard/announcements" className="text-xs text-gold hover:underline font-semibold">
+              View All →
+            </Link>
+          </div>
+
+          {announcements.length > 0 ? (
+            <div className="space-y-2.5">
+              {announcements.map((ann) => (
+                <div key={ann.id} className="p-3 rounded-xl bg-card/60 border border-border/30 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-3.5 h-3.5 text-gold shrink-0" />
+                    <span className="font-semibold text-xs text-foreground line-clamp-1">{ann.title}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed pl-5">
+                    {ann.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground italic py-3 text-center">
+              No new circulars posted yet.
+            </p>
+          )}
+        </Card>
+
+        {/* Upcoming Events / Schedule */}
+        <Card className="glass border-border/40 p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-saffron" />
+              <h2 className="text-base font-bold text-foreground">Festival Program Schedule</h2>
+            </div>
+            <Link href="/dashboard/events" className="text-xs text-saffron hover:underline font-semibold">
+              Full Schedule →
+            </Link>
+          </div>
+
+          {events.length > 0 ? (
+            <div className="space-y-2.5">
+              {events.map((ev) => (
+                <div key={ev.id} className="p-3 rounded-xl bg-card/60 border border-border/30 flex items-center justify-between gap-2">
+                  <div className="space-y-0.5 min-w-0">
+                    <span className="font-semibold text-xs text-foreground block truncate">{ev.name}</span>
+                    <span className="text-[10px] text-muted-foreground block">{ev.location}</span>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] text-gold border-gold/30 shrink-0">
+                    {formatDate(ev.date)} ({ev.startTime})
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground italic py-3 text-center">
+              Event schedule timeline loading...
+            </p>
+          )}
+        </Card>
+      </div>
+
+      {/* ── 3. Primary Metrics Cards (Animated Count-Up) ────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <StatCard
           title="Total Collections"

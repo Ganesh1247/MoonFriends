@@ -37,7 +37,7 @@ export async function createVolunteer(
   formData: Record<string, unknown>
 ): Promise<ActionResult<{ id: string }>> {
   try {
-    await requireRole(['admin', 'treasurer', 'volunteer']);
+    await requireRole(['admin']);
 
     const parsed = volunteerSchema.safeParse(formData);
     if (!parsed.success) {
