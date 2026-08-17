@@ -20,7 +20,13 @@ function getFirebaseAdminApp() {
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
       });
     }
-    serviceAccount = JSON.parse(raw) as ServiceAccount;
+    const parsed = JSON.parse(raw);
+    // Vercel may store the private_key with escaped \n instead of real newlines.
+    // Replace them so the Admin SDK RSA parser works correctly.
+    if (parsed.private_key) {
+      parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+    }
+    serviceAccount = parsed as ServiceAccount;
   } catch {
     throw new Error(
       'Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY. Ensure it is valid JSON.'
